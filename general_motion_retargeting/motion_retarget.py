@@ -15,7 +15,7 @@ class GeneralMotionRetargeting:
         src_human: str,
         tgt_robot: str,
         actual_human_height: float = None,
-        solver: str="daqp", # change from "quadprog" to "daqp".
+        solver: str="quadprog", # change from "quadprog" to "daqp".
         damping: float=5e-1, # change from 1e-1 to 1e-2.
         verbose: bool=False,
     ) -> None:
@@ -128,7 +128,7 @@ class GeneralMotionRetargeting:
                 task = self.human_body_to_task1[body_name]
                 pos, rot = human_data[body_name]
                 task.set_target(mink.SE3.from_rotation_and_translation(mink.SO3(rot), pos))
-        
+
         if self.use_ik_match_table2:
             for body_name in self.human_body_to_task2.keys():
                 task = self.human_body_to_task2[body_name]
@@ -159,7 +159,7 @@ class GeneralMotionRetargeting:
                 self.configuration.integrate_inplace(vel1, dt)
                 next_error = self.error1()
                 num_iter += 1
-
+            # print(f"IK task1 converged in {num_iter} iterations with error {next_error:.4f}")
         if self.use_ik_match_table2:
             curr_error = self.error2()
             dt = self.configuration.model.opt.timestep
@@ -206,14 +206,13 @@ class GeneralMotionRetargeting:
         return human_data
 
 
-    def scale_human_data(self, human_data, human_root_name, human_scale_table):
+    def scale_human_data_original(self, human_data, human_root_name, human_scale_table):
         
         human_data_local = {}
         root_pos, root_quat = human_data[human_root_name]
         
         # scale root
         scaled_root_pos = human_scale_table[human_root_name] * root_pos
-        
         # scale other body parts in local frame
         for body_name in human_data.keys():
             if body_name not in human_scale_table:
@@ -230,7 +229,106 @@ class GeneralMotionRetargeting:
             human_data_global[body_name] = (human_data_local[body_name] + scaled_root_pos, human_data[body_name][1])
 
         return human_data_global
-    
+    # scale data along parent node, currently using fixed parents (for taihu robot using optitrack motion capture data)
+    def scale_human_data(self, human_data, human_root_name, human_scale_table):
+        """
+        human_data: dict, {bone_name: (pos, quat)}
+        human_root_name: str, root bone name, e.g. "Hips"
+        human_scale_table: dict, {bone_name: scale(float or np.array)}
+        parent_table: dict, {bone_name: parent_name or None}
+        """
+            
+        parent_table = {
+            "Hips": None,
+            "Spine1": "Hips",
+
+            "LeftShoulder": "Spine1",
+            "LeftArm": "LeftShoulder",
+            "LeftForeArm": "LeftArm",
+            "LeftHand": "LeftForeArm",
+
+            "RightShoulder": "Spine1",
+            "RightArm": "RightShoulder",
+            "RightForeArm": "RightArm",
+            "RightHand": "RightForeArm",
+
+            "LeftUpLeg": "Hips",
+            "LeftLeg": "LeftUpLeg",
+            "LeftFoot": "LeftLeg",
+            # "LeftToeBase": "LeftFoot",
+            "RightUpLeg": "Hips",
+            "RightLeg": "RightUpLeg",
+            "RightFoot": "RightLeg",
+            # "RightToeBase": "RightFoot",
+        }
+        # import ipdb; ipdb.set_trace()
+        def _as_scale(s):
+            # 支持标量或 3 维向量
+            if isinstance(s, (int, float, np.floating)):
+                return np.array([s, s, s], dtype=float)
+            s = np.asarray(s, dtype=float)
+            if s.shape == ():  # 零维标量
+                return np.array([float(s), float(s), float(s)], dtype=float)
+            assert s.shape == (3,), f"scale must be scalar or (3,), got shape {s.shape}"
+            return s
+
+        # 只处理 parent_table 中的关节；其它在 human_data 中存在也忽略
+        nodes = [n for n in parent_table.keys() if n in human_data]
+
+        # 基本检查
+        if human_root_name not in parent_table:
+            raise KeyError(f"root '{human_root_name}' 不在 parent_table 中")
+        if human_root_name not in human_data:
+            raise KeyError(f"root '{human_root_name}' 不在 human_data 中")
+        if human_root_name not in human_scale_table:
+            raise KeyError(f"root '{human_root_name}' 不在 human_scale_table 中")
+
+        # 预处理 scale
+        scale_tbl = {n: _as_scale(human_scale_table.get(n, 1.0)) for n in parent_table.keys()}
+
+        # 结果容器
+        out = {}
+
+        # 递归计算，确保父节点先于子节点
+        def solve(node):
+            if node in out:
+                return
+            parent = parent_table[node]
+
+            if parent is None:
+                # 根：直接按自己的 scale 缩放位置
+                pos, quat = human_data[node]
+                s = scale_tbl[node]
+                out[node] = (s * np.asarray(pos, dtype=float), np.asarray(quat, dtype=float))
+                return
+
+            # 子节点：确保父节点已计算
+            if parent not in out:
+                # 若父节点在 parent_table 但不在 human_data，会跳过该子树
+                if parent not in human_data:
+                    return
+                solve(parent)
+                if parent not in out:
+                    return
+
+            # 计算子节点缩放后位置
+            p_pos_orig, _ = human_data[parent]
+            c_pos_orig, c_quat = human_data[node]
+
+            parent_pos_scaled, _ = out[parent]
+            local_vec = np.asarray(c_pos_orig, dtype=float) - np.asarray(p_pos_orig, dtype=float)
+            s_child = scale_tbl.get(node, np.array([1.0, 1.0, 1.0]))
+            c_pos_scaled = parent_pos_scaled + s_child * local_vec
+
+            out[node] = (c_pos_scaled, np.asarray(c_quat, dtype=float))
+
+        # 按拓扑顺序递归（顺序无所谓，solve 会递归父节点）
+        for n in nodes:
+            # 仅当该节点在 scale/parent 表里时处理；多余节点自动忽略
+            if n in parent_table and n in human_scale_table:
+                solve(n)
+        out = {k: v for k, v in out.items() if k in human_scale_table}
+        return out
     def offset_human_data(self, human_data, pos_offsets, rot_offsets):
         """the pos offsets are applied in the local frame"""
         offset_human_data = {}

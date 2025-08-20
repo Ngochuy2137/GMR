@@ -73,8 +73,8 @@ if __name__ == "__main__":
             
             # Load LAFAN1 trajectory
             try:
-                lafan1_data_frames, actual_human_height = load_lafan1_file(bvh_file_path)
-                src_fps = 30  # LAFAN1 data is typically 30 FPS
+                lafan1_data_frames, actual_human_height, fps = load_lafan1_file(bvh_file_path)
+                src_fps = fps  # LAFAN1 data is typically 30 FPS
             except Exception as e:
                 print(f"Error loading {bvh_file_path}: {e}")
                 continue
@@ -113,41 +113,12 @@ if __name__ == "__main__":
             dof_pos = qpos_list[:, 7:]
             num_frames = root_pos.shape[0]
             
-            # obtain local body pos
-            identity_root_pos = torch.zeros((num_frames, 3), device=device)
-            identity_root_rot = torch.zeros((num_frames, 4), device=device)
-            identity_root_rot[:, -1] = 1.0
-            local_body_pos, _ = kinematics_model.forward_kinematics(
-                identity_root_pos, 
-                identity_root_rot, 
-                torch.from_numpy(dof_pos).to(device=device, dtype=torch.float)
-            )
-            body_names = kinematics_model.body_names
-
-            HEIGHT_ADJUST = False
-            PERFRAME_ADJUST = False
-            if HEIGHT_ADJUST:
-                body_pos, _ = kinematics_model.forward_kinematics(
-                    torch.from_numpy(root_pos).to(device=device, dtype=torch.float),
-                    torch.from_numpy(root_rot).to(device=device, dtype=torch.float),
-                    torch.from_numpy(dof_pos).to(device=device, dtype=torch.float)
-                )
-                ground_offset = 0.00
-                if not PERFRAME_ADJUST:
-                    lowest_height = torch.min(body_pos[..., 2]).item()
-                    root_pos[:, 2] = root_pos[:, 2] - lowest_height + ground_offset
-                else:
-                    for i in range(root_pos.shape[0]):
-                        lowest_body_part = torch.min(body_pos[i, :, 2])
-                        root_pos[i, 2] = root_pos[i, 2] - lowest_body_part + ground_offset
 
             motion_data = {
                 "root_pos": root_pos,
                 "root_rot": root_rot,
                 "dof_pos": dof_pos,
-                "local_body_pos": local_body_pos.detach().cpu().numpy(),
-                "fps": src_fps,
-                "link_body_list": body_names,
+                "fps": src_fps
             }
             
 

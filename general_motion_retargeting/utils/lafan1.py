@@ -15,6 +15,7 @@ def load_lafan1_file(bvh_file):
     }
     """
     data = read_bvh(bvh_file)
+    fps = data.fps
     global_data = utils.quat_fk(data.quats, data.pos, data.parents)
 
     rotation_matrix = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
@@ -29,15 +30,17 @@ def load_lafan1_file(bvh_file):
             result[bone] = (position, orientation)
 
         # Add modified foot pose
-        result["LeftFootMod"] = (result["LeftFoot"][0], result["LeftToe"][1])
-        result["RightFootMod"] = (result["RightFoot"][0], result["RightToe"][1])
+        # result["LeftFootMod"] = (result["LeftFoot"][0], result["LeftToe"][1])
+        # result["RightFootMod"] = (result["RightFoot"][0], result["RightToe"][1])
         
         frames.append(result)
     
-    human_height = result["Head"][0][2] - min(result["LeftFootMod"][0][2], result["RightFootMod"][0][2])
-    # human_height = human_height + 0.2  # cm to m
-    human_height = 1.75  # cm to m
+    human_height = result["Head"][0][2] - min(result["LeftToeBase"][0][2], result["LeftToeBase"][0][2])
+    print(human_height)
+    print("---------------------------")
+    human_height = human_height + 0.2  # cm to m
+    # human_height = 1.6  # cm to m
 
-    return frames, human_height
+    return frames, human_height, fps
 
 
