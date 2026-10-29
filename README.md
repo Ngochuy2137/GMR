@@ -2,7 +2,7 @@
 
 ## Table of contents
 
-- [K1 asset update](#k1-asset-update)
+- [Booster K1 asset update](#booster-k1-asset-update)
   - [Version history and differences](#version-history-and-differences)
   - [Asset layout](#asset-layout)
   - [Ankle model choices](#ankle-model-choices)
@@ -60,7 +60,7 @@
 This repo is licensed under the [MIT License](LICENSE).
 
 
-# K1 asset update
+# Booster K1 asset update
 
 The default `booster_k1` now uses the pinned Booster model shared with Reflex.
 The original model is preserved as `booster_k1_legacy`. This update changes
