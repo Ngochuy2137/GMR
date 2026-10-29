@@ -1,0 +1,117 @@
+{
+  "model_check_passed": true,
+  "source_commit": "12a97516f57469078707afb587a5f84c1cb110d1",
+  "packages": {
+    "mujoco": "3.3.7",
+    "numpy": "1.26.4",
+    "scipy": "1.15.3"
+  },
+  "poses_checked": 1973,
+  "bodies_per_pose": 25,
+  "max_position_error_m": 4.440892098500626e-16,
+  "max_rotation_matrix_error": 9.222061947422588e-09,
+  "mass_kg": 19.666,
+  "motions": [
+    {
+      "file": "k1_fight_001.csv",
+      "sha256": "59f09331fae7ac5a8d237f91ec982fde5643ebb716fa1916511002617145ff6e",
+      "frames": 706,
+      "fps": 50.0,
+      "column_aliases": {
+        "left_shoulder_pitch_joint": "aaleft_shoulder_pitch_joint",
+        "right_shoulder_pitch_joint": "aaright_shoulder_pitch_joint"
+      },
+      "max_quaternion_norm_error": 4.718593737962351e-09,
+      "joint_limit_violations": {
+        "aahead_pitch_joint": {
+          "frames": 45,
+          "max_excess_rad": 0.06029799999999996
+        },
+        "aaleft_shoulder_pitch_joint": {
+          "frames": 95,
+          "max_excess_rad": 0.11319019999977997
+        },
+        "left_elbow_yaw_joint": {
+          "frames": 18,
+          "max_excess_rad": 0.16968480000004016
+        },
+        "aaright_shoulder_pitch_joint": {
+          "frames": 22,
+          "max_excess_rad": 0.03002000000001015
+        },
+        "right_shoulder_roll_joint": {
+          "frames": 231,
+          "max_excess_rad": 0.14513099999984003
+        },
+        "right_elbow_pitch_joint": {
+          "frames": 10,
+          "max_excess_rad": 0.41602700000007986
+        },
+        "right_elbow_yaw_joint": {
+          "frames": 5,
+          "max_excess_rad": 0.17870679999992012
+        },
+        "left_ankle_roll_joint": {
+          "frames": 6,
+          "max_excess_rad": 0.005724999999983049
+        },
+        "right_ankle_pitch_joint": {
+          "frames": 1,
+          "max_excess_rad": 0.005488999999995026
+        },
+        "right_ankle_roll_joint": {
+          "frames": 27,
+          "max_excess_rad": 0.014196999999972038
+        }
+      },
+      "within_joint_limits": false
+    },
+    {
+      "file": "k1_mj2_seg1.csv",
+      "sha256": "fd5849a47e99380f003d9dcf1218912dff63a81729afe769d904225e8dc22d3e",
+      "frames": 1261,
+      "fps": 50.0,
+      "column_aliases": {
+        "left_shoulder_pitch_joint": "aaleft_shoulder_pitch_joint",
+        "right_shoulder_pitch_joint": "aaright_shoulder_pitch_joint"
+      },
+      "max_quaternion_norm_error": 0.00036207821950995367,
+      "joint_limit_violations": {
+        "right_elbow_yaw_joint": {
+          "frames": 27,
+          "max_excess_rad": 0.15523385163174463
+        },
+        "left_hip_yaw_joint": {
+          "frames": 1,
+          "max_excess_rad": 0.0026625611626198697
+        },
+        "left_knee_pitch_joint": {
+          "frames": 12,
+          "max_excess_rad": 0.010542188547224305
+        },
+        "left_ankle_pitch_joint": {
+          "frames": 32,
+          "max_excess_rad": 0.03516032176906614
+        },
+        "left_ankle_roll_joint": {
+          "frames": 18,
+          "max_excess_rad": 0.005397982149562053
+        },
+        "right_knee_pitch_joint": {
+          "frames": 3,
+          "max_excess_rad": 0.01178961854255775
+        },
+        "right_ankle_pitch_joint": {
+          "frames": 20,
+          "max_excess_rad": 0.03411884585491265
+        },
+        "right_ankle_roll_joint": {
+          "frames": 6,
+          "max_excess_rad": 0.03053294637934101
+        }
+      },
+      "within_joint_limits": false
+    }
+  ],
+  "scope": "MuJoCo pose replay and independent URDF kinematics; no physics or human retargeting"
+}

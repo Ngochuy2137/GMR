@@ -15,7 +15,8 @@ ROBOT_XML_DICT = {
     "hightorque_hi": ASSET_ROOT / "hightorque_hi" / "hi_25dof.xml",
     "galaxea_r1pro": ASSET_ROOT / "galaxea_r1pro" / "r1_pro.xml",
     "berkeley_humanoid_lite": ASSET_ROOT / "berkeley_humanoid_lite" / "bhl_scene.xml",
-    "booster_k1": ASSET_ROOT / "booster_k1" / "K1_serial.xml",
+    "booster_k1": ASSET_ROOT / "booster_k1" / "booster_22dof" / "K1_22dof.xml",
+    "booster_k1_legacy": ASSET_ROOT / "booster_k1" / "legacy_2025_08_10" / "K1_serial.xml",
     "taihu": ASSET_ROOT / "taihu" / "mjcf/mjmodel_back.xml",
 }
 
@@ -33,6 +34,7 @@ IK_CONFIG_DICT = {
         "galaxea_r1pro": IK_CONFIG_ROOT / "smplx_to_r1pro.json",
         "berkeley_humanoid_lite": IK_CONFIG_ROOT / "smplx_to_bhl.json",
         "booster_k1": IK_CONFIG_ROOT / "smplx_to_k1.json",
+        "booster_k1_legacy": IK_CONFIG_ROOT / "smplx_to_k1_legacy.json",
     },
     "bvh":{
         "unitree_g1": IK_CONFIG_ROOT / "bvh_to_g1.json",
@@ -61,7 +63,8 @@ ROBOT_BASE_DICT = {
     "hightorque_hi": "base_link",
     "galaxea_r1pro": "torso_link4",
     "berkeley_humanoid_lite": "pelvis",
-    "booster_k1": "Trunk",
+    "booster_k1": "trunk",
+    "booster_k1_legacy": "Trunk",
     "taihu": "BASE_S",
 }
 
@@ -77,5 +80,6 @@ VIEWER_CAM_DISTANCE_DICT = {
     "galaxea_r1pro": 3.0,
     "berkeley_humanoid_lite": 2.0,
     "booster_k1": 2.0,
+    "booster_k1_legacy": 2.0,
     "taihu": 3.0,
 }

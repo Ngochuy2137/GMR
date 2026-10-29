@@ -1,5 +1,28 @@
 # GMR: General Motion Retargeting
 
+## Table of contents
+
+- [News & Updates](#news--updates)
+- [K1 asset update](#k1-asset-update)
+  - [Version history and differences](#version-history-and-differences)
+  - [Asset layout](#asset-layout)
+  - [Ankle model choices](#ankle-model-choices)
+  - [Available validation data](#available-validation-data)
+- [Demo](#demo)
+- [Supported Robots and Data Formats](#supported-robots-and-data-formats)
+- [Installation](#installation)
+- [Data Preparation](#data-preparation)
+- [Human/Robot Motion Data Formulation](#humanrobot-motion-data-formulation)
+- [Usage](#usage)
+  - [Retargeting from SMPL-X (AMASS, OMOMO) to Robot](#retargeting-from-smpl-x-amass-omomo-to-robot)
+  - [Retargeting from BVH (LAFAN1) to Robot](#retargeting-from-bvh-lafan1-to-robot)
+  - [Retargeting from FBX (OptiTrack) to Robot](#retargeting-from-fbx-optitrack-to-robot)
+  - [Visualize saved robot motion](#visualize-saved-robot-motion)
+- [Speed Benchmark](#speed-benchmark)
+- [Citation](#citation)
+- [Known Issues](#known-issues)
+- [Acknowledgement](#acknowledgement)
+
 
   <a href="https://arxiv.org/abs/2505.02833">
     <img src="https://img.shields.io/badge/paper-arXiv%3A2505.02833-b31b1b.svg" alt="arXiv Paper"/>
@@ -37,6 +60,167 @@ This repo is licensed under the [MIT License](LICENSE).
 - 2025-08-06: GMR now supports [HighTorque Hi](https://www.hightorquerobotics.com/hi/), the 6th humanoid robot in the repo.
 - 2025-08-04: Initial release of GMR. Check our [twitter post](https://x.com/ZeYanjie/status/1952446745696469334).
 
+
+# K1 asset update
+
+The default `booster_k1` now uses the pinned Booster model shared with Reflex.
+The original model is preserved as `booster_k1_legacy`. This update changes
+assets, retargeting body names, and the viewer root. It does not add the
+RGB-video pipeline or validate human-to-K1 retargeting.
+
+## Version history and differences
+
+GMR added K1 on **2025-08-10**, in commit
+`b7bc049ef9b8749f34f47294ddb4861adb104f34`. The archived files
+`assets/booster_k1/legacy_2025_08_10/K1_serial.urdf` and `K1_serial.xml` are
+unchanged from that commit. GMR loads the model XML through
+`general_motion_retargeting/params.py`.
+Replacing only the URDF would not update retargeting.
+
+The archived model is outdated relative to the Booster revision used by Reflex.
+Its position limits for all 22 joints match Booster's
+[2025-12-05 asset commit](https://github.com/BoosterRobotics/booster_assets/commit/486da0f864016676de6dab724fd60a8a551655d1).
+Booster later changed joint/link names and 18 joint position limits in
+[commit 38a0ae8](https://github.com/BoosterRobotics/booster_assets/commit/38a0ae84b17743a8aa21511f69ed38e7d22d1664).
+That commit was authored on **2026-08-12** and committed on **2026-08-28**.
+The commit message mentions name changes but does not explain each new limit.
+
+The source for the copied assets is `BoosterRobotics/booster_assets` at
+`12a97516f57469078707afb587a5f84c1cb110d1`, the revision pinned by Reflex
+when this comparison was made. This is a fixed source revision, not a promise
+to follow the latest branch automatically.
+
+| Item | Bundled GMR model | Pinned Booster model | Effect |
+| --- | --- | --- | --- |
+| Root and joint/link names | `Trunk`, `Left_Elbow_Yaw`, `Left_Shank` | `trunk`, `left_elbow_yaw_joint`, `left_knee_pitch_link` | Update the retargeting body map and viewer root name. |
+| Position limits | Older limits; 18 of 22 differ | Revised limits; four ankle limits match | Solve and validate against the target model's limits. |
+| Left elbow yaw range | `[-2.440, 0]` rad | `[-2.242, 0.816]` rad | A name change alone does not update the allowed motion. |
+| Left elbow pitch range | `[-2.270, 2.270]` rad | `[-1.885, 1.885]` rad | Some old poses exceed the new range. |
+| Left shoulder pitch range | `[-3.316, 1.220]` rad | `[-2.932, 1.196]` rad | Check arm targets with the new limits. |
+| Hip attachment height relative to trunk | `z = -0.062` m | `z = -0.077` m | Recheck foot positions and ground alignment. |
+| Foot meshes | Match Booster's `Left_Foot_old.STL` and `Right_Foot_old.STL` byte for byte | Uses the current `Left_Foot.STL` and `Right_Foot.STL` | Recheck foot contact geometry. |
+| Total link mass in URDF | About 18.718 kg | 19.666 kg | Relevant to later physics checks; not a direct input to geometric pose matching. |
+| Foot mass and inertia | Older values | Revised values | Use target-model values for physics validation. |
+
+All 22 joint axes and joint-frame orientations match after pairing the joints.
+The hip attachment positions are the two joint-position differences. These
+checks do not establish when the physical robot changed. The original GMR
+asset source revision is not recorded, so an older model is supported by the
+evidence, while the reason for every historical difference remains unknown.
+
+## Asset layout
+
+The assets are stored in this GMR checkout. No Booster training package,
+external symlink, or second clone is needed to load them. Files were read from
+Git objects in the existing Booster assets checkout at the pinned commit,
+not from its unverified working files or from Reflex's generated cache.
+
+The layout under `assets/booster_k1/` is:
+
+```text
+legacy_2025_08_10/    # Original URDF/XML files and all original meshes
+booster_22dof/       # Booster URDF, serial XML, referenced meshes, and LICENSE
+manifest.json       # Source repository, commit, model choice, and SHA-256 hashes
+```
+
+`booster_k1` selects the copied `booster_22dof/K1_22dof.xml` and updated
+`smplx_to_k1.json` body map. `booster_k1_legacy` selects the archived XML and
+unchanged `smplx_to_k1_legacy.json` body map. Both names work with the SMPL-X
+single-file and batch tools and the saved-motion viewer. Select the matching
+model explicitly when replaying old robot motion; saved motion files from
+this checkout do not identify the model revision or joint order by name.
+
+New source files are unchanged copies, including their relative mesh paths.
+The Booster license is included in `booster_22dof/LICENSE`. Original assets
+and their meshes were moved together without changing their bytes.
+To update again, copy a reviewed source revision, refresh the manifest and body
+map, and repeat the model checks before using the new revision for data.
+
+## Ankle model choices
+
+Booster provides `K1_22dof.xml` and `K1_22dof_parallel.xml`. These are different
+representations, not simply an old and a new release of the same file.
+
+- The serial model represents each ankle by pitch and roll joints. It matches
+  the 22-joint layout used by Reflex's URDF and is the GMR target.
+- The parallel model also describes ankle drive joints, rods, and closed loops
+  enforced by connection constraints. It has extra coordinates, so it cannot
+  replace the current model while keeping GMR's assumption that all coordinates
+  after the free root are the 22 output joint angles.
+
+Reflex imports `K1_22dof.urdf` and uses Booster's ankle actuator wrapper.
+That does not simulate the full rod linkage. Using the serial representation
+does not mean Reflex uses the old 2025 model. Model revision and ankle
+representation must be checked separately.
+
+## Available validation data
+
+The paths below are relative to the GMR repository root. External checkouts and
+generated data must already exist before following their local links.
+
+| Data | What is present | Suitable check and limitation |
+| --- | --- | --- |
+| `motion/bvh/` | Six tracked human motion clips, including `run.bvh` and `dance.bvh` | Human-to-robot retargeting input, but this checkout has no BVH-to-K1 configuration and the BVH command does not accept K1. Validate the skeleton, units, and frame timing before adding support. |
+| [Booster K1 motions](../../robot_utilities/booster/booster_assets/motions/K1) | `k1_fight_001.csv` and `k1_mj2_seg1.csv`, with joint order in Booster's `src/booster_assets/motions.py` | Good candidates for K1 replay and cross-model pose checks after confirming schema and joint-name aliases. They are already robot motion, so they do not test human-to-K1 retargeting. |
+| [Reflex prepared motions](../../humanoid_training_frameworks/reflex/data/motions) | Four local NPZ files with 29 G1 joints and 30 bodies per frame | Useful for G1 regression and checking the output format; not direct K1 references or human SMPL-X input. |
+| A camera recording and its GVHMR result | Not found among the inspected GMR motion files | Needed to validate the full video-to-K1 path. BVH or robot replay alone cannot validate video reconstruction. |
+
+For SMPL-X retargeting, first prepare the human model files and motion input as
+described in [Data Preparation](#data-preparation). The existing G1 catch pose,
+G1 motion arrays, and G1 AMP features cannot be converted to K1 by renaming
+columns. AMP features are training examples derived from robot state, not the
+original human recording.
+
+Validate in stages: model loading and paired poses, K1 robot-motion replay,
+human-motion retargeting, then a complete camera clip. Record frame timing,
+joint/body names, quaternion order, and the asset revision with each new output.
+The model checks below have passed. Human retargeting, Isaac Sim runtime
+agreement, dynamic balance, torque limits, and video reconstruction are not
+validated by these checks.
+
+Run from the **GMR repository root**, with Python 3.10+, NumPy, SciPy, and
+MuJoCo installed. This checker does not import GMR's optional retargeting
+packages or start Isaac Sim:
+
+```bash
+python scripts/validate_k1_model.py
+```
+
+It checks hashes for all current and archived assets, both model registrations,
+body names in both retargeting configurations, joint axes and limits, total
+mass, and body poses against an independent calculation from the copied URDF.
+It writes `outputs/k1_model_check.json`. Expect `model_check_passed: true`.
+
+If the Booster checkout and its CSV files are available at the paths below,
+check every frame of both clips:
+
+```bash
+python scripts/validate_k1_model.py \
+  --motion ../../robot_utilities/booster/booster_assets/motions/K1/k1_fight_001.csv \
+  --motion ../../robot_utilities/booster/booster_assets/motions/K1/k1_mj2_seg1.csv
+```
+
+Add `--view` from a desktop terminal for pose playback in the MuJoCo viewer.
+This writes poses directly; it does not test a controller. The CSV header is
+used for joint mapping, including the shoulder pitch names without the `aa`
+prefix. Small root quaternion length errors are normalized in memory; source
+files are not changed. `--fps` defaults to the documented 50 FPS.
+
+The [recorded check](docs/k1_model_validation.json) covers 1,973 poses: six
+constructed poses plus 706 fight frames and 1,261 dance frames, with 25 bodies
+per pose. Maximum position error is below `1e-12` m; maximum rotation-matrix
+entry error is below `1e-7`. Both serial models load and the new total mass is
+19.666 kg. These checks compare XML and URDF kinematics in MuJoCo, not an
+Isaac Sim import.
+
+Both source clips exceed some new joint limits. The largest excess is about
+0.416 rad in the fight clip and 0.155 rad in the dance clip. The checker reports
+these separately with `within_joint_limits: false`; a passing model check
+must not be read as approval of these clips for training. No angles are clipped.
+The serial XML also specifies a different solver time step from the archived
+model, so retargeting results need a separate check before reuse. The runtime
+used for these model checks had no `mink` package, and no retargeting run is
+claimed.
 
 # Demo
 
