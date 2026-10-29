@@ -21,7 +21,11 @@ ROBOT_XML_DICT = {
     "hightorque_hi": ASSET_ROOT / "hightorque_hi" / "hi_25dof.xml",
     "galaxea_r1pro": ASSET_ROOT / "galaxea_r1pro" / "r1_pro.xml",
     "berkeley_humanoid_lite": ASSET_ROOT / "berkeley_humanoid_lite" / "bhl_scene.xml",
-    "booster_k1": ASSET_ROOT / "booster_k1" / "K1_serial.xml",
+    "booster_k1": ASSET_ROOT / "booster_k1" / "booster_22dof" / "K1_22dof.xml",
+    "booster_k1_legacy": ASSET_ROOT
+    / "booster_k1"
+    / "legacy_2025_08_10"
+    / "K1_serial.xml",
     "pnd_adam_lite": ASSET_ROOT / "pnd_adam_lite" / "scene.xml",
     "tienkung": ASSET_ROOT / "tienkung" / "mjcf" / "tienkung.xml",
     "pal_talos": ASSET_ROOT / "pal_talos" / "talos.xml",
@@ -48,6 +52,7 @@ IK_CONFIG_DICT = {
         "galaxea_r1pro": IK_CONFIG_ROOT / "smplx_to_r1pro.json",
         "berkeley_humanoid_lite": IK_CONFIG_ROOT / "smplx_to_bhl.json",
         "booster_k1": IK_CONFIG_ROOT / "smplx_to_k1.json",
+        "booster_k1_legacy": IK_CONFIG_ROOT / "smplx_to_k1_legacy.json",
         "pnd_adam_lite": IK_CONFIG_ROOT / "smplx_to_adam.json",
         "tienkung": IK_CONFIG_ROOT / "smplx_to_tienkung.json",
         "fourier_gr3": IK_CONFIG_ROOT / "smplx_to_gr3.json",
@@ -100,7 +105,8 @@ ROBOT_BASE_DICT = {
     "hightorque_hi": "base_link",
     "galaxea_r1pro": "torso_link4",
     "berkeley_humanoid_lite": "imu_2",
-    "booster_k1": "Trunk",
+    "booster_k1": "trunk",
+    "booster_k1_legacy": "Trunk",
     "pnd_adam_lite": "pelvis",
     "tienkung": "Base_link",
     "pal_talos": "base_link",
@@ -123,6 +129,7 @@ VIEWER_CAM_DISTANCE_DICT = {
     "galaxea_r1pro": 3.0,
     "berkeley_humanoid_lite": 2.0,
     "booster_k1": 2.0,
+    "booster_k1_legacy": 2.0,
     "pnd_adam_lite": 3.0,
     "tienkung": 3.0,
     "pal_talos": 3.0,
