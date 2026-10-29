@@ -65,12 +65,12 @@ This repo is licensed under the [MIT License](LICENSE).
 The default `booster_k1` now uses the pinned Booster model shared with Reflex.
 The original model is preserved as `booster_k1_legacy`. This update changes
 assets, retargeting body names, and the viewer root. It also checks synthetic
-human-to-K1 retargeting on upstream commit `25f56db`. Video reconstruction
+human-to-Booster K1 retargeting on upstream commit `25f56db`. Video reconstruction
 and real human recordings remain outside this update.
 
 ## Version history and differences
 
-GMR added K1 on **2025-08-10**, in commit
+GMR added Booster K1 on **2025-08-10**, in commit
 `b7bc049ef9b8749f34f47294ddb4861adb104f34`. The archived files
 `assets/booster_k1/legacy_2025_08_10/K1_serial.urdf` and `K1_serial.xml` are
 unchanged from that commit. GMR loads the model XML through
@@ -160,19 +160,19 @@ generated data must already exist before following their local links.
 
 | Data | What is present | Suitable check and limitation |
 | --- | --- | --- |
-| `tests/synthetic_motion.py` | Upstream generates 90 human frames in memory; the K1 test adds a head target | Tests the retargeting solver without SMPL-X model downloads. It does not test a file reader or real motion quality. |
-| BVH clips from the old `stonecyb` fork | Not part of this upstream-based branch | They remain in the old local branches. Upstream still has no BVH-to-K1 configuration; adding those files alone would not enable K1 BVH retargeting. |
-| [Booster K1 motions](../../robot_utilities/booster/booster_assets/motions/K1) | `k1_fight_001.csv` and `k1_mj2_seg1.csv`, with joint order in Booster's `src/booster_assets/motions.py` | Good candidates for K1 replay and cross-model pose checks after confirming schema and joint-name aliases. They are already robot motion, so they do not test human-to-K1 retargeting. |
-| [Reflex prepared motions](../../humanoid_training_frameworks/reflex/data/motions) | Four local NPZ files with 29 G1 joints and 30 bodies per frame | Useful for G1 regression and checking the output format; not direct K1 references or human SMPL-X input. |
-| A camera recording and its GVHMR result | Not found among the inspected GMR motion files | Needed to validate the full video-to-K1 path. BVH or robot replay alone cannot validate video reconstruction. |
+| `tests/synthetic_motion.py` | Upstream generates 90 human frames in memory; the Booster K1 test adds a head target | Tests the retargeting solver without SMPL-X model downloads. It does not test a file reader or real motion quality. |
+| BVH clips from the old `stonecyb` fork | Not part of this upstream-based branch | They remain in the old local branches. Upstream still has no BVH-to-Booster K1 configuration; adding those files alone would not enable Booster K1 BVH retargeting. |
+| [Booster K1 motions](../../robot_utilities/booster/booster_assets/motions/K1) | `k1_fight_001.csv` and `k1_mj2_seg1.csv`, with joint order in Booster's `src/booster_assets/motions.py` | Good candidates for Booster K1 replay and cross-model pose checks after confirming schema and joint-name aliases. They are already robot motion, so they do not test human-to-Booster K1 retargeting. |
+| [Reflex prepared motions](../../humanoid_training_frameworks/reflex/data/motions) | Four local NPZ files with 29 G1 joints and 30 bodies per frame | Useful for G1 regression and checking the output format; not direct Booster K1 references or human SMPL-X input. |
+| A camera recording and its GVHMR result | Not found among the inspected GMR motion files | Needed to validate the full video-to-Booster K1 path. BVH or robot replay alone cannot validate video reconstruction. |
 
 For SMPL-X retargeting, first prepare the human model files and motion input as
 described in [Data Preparation](#data-preparation). The existing G1 catch pose,
-G1 motion arrays, and G1 AMP features cannot be converted to K1 by renaming
+G1 motion arrays, and G1 AMP features cannot be converted to Booster K1 by renaming
 columns. AMP features are training examples derived from robot state, not the
 original human recording.
 
-Validate in stages: model loading and paired poses, K1 robot-motion replay,
+Validate in stages: model loading and paired poses, Booster K1 robot-motion replay,
 human-motion retargeting, then a complete camera clip. Record frame timing,
 joint/body names, quaternion order, and the asset revision with each new output.
 The model checks below have passed. Synthetic human retargeting is checked
@@ -226,18 +226,18 @@ starting heights and time steps; they do not establish behavior for all motions.
 ## Integration with current upstream
 
 This branch uses upstream `25f56db79ac411258b377b6d4ccba0c8ff3372ac` as its
-base and carries only the K1 asset update from local commit `9feb4dc`. It does
+base and carries only the Booster K1 asset update from local commit `9feb4dc`. It does
 not merge the old fork's `taihu` commit. The old local branches retain that
 history and its motion files.
 
 Keep upstream's solver-limit fix, dynamic robot choices, `pyproject.toml`,
 `uv.lock`, GVHMR readers, and formatting rules. The SMPL-X command now derives
-robot choices from the configuration, including both K1 entries. There is no
+robot choices from the configuration, including both Booster K1 entries. There is no
 need for the old hardcoded command choices or `setup.py`.
 
 The new `tests/test_k1_retarget.py` uses upstream's 90-frame synthetic motion
 and adds a head target without changing the shared G1/T1 fixture or expected
-trajectories. It checks both K1 models with their default settings, the other
+trajectories. It checks both Booster K1 models with their default settings, the other
 root height (0 or 1 m), and the other time step (0.001 or 0.002 s). Each case
 checks finite poses, normalized root quaternions, joint limits, root height,
 changes between adjacent frames, and pelvis/foot tracking errors below 5 cm,
@@ -252,8 +252,8 @@ uv run --no-sync ruff check general_motion_retargeting scripts tests
 uv run --no-sync ruff format --check general_motion_retargeting scripts tests
 ```
 
-The expected result is 13 passing tests: seven upstream checks and six K1
-cases. To also write measured K1 errors to a local report:
+The expected result is 13 passing tests: seven upstream checks and six Booster K1
+cases. To also write measured Booster K1 errors to a local report:
 
 ```bash
 GMR_K1_REPORT=outputs/k1_retarget_validation.json uv run --no-sync pytest tests/test_k1_retarget.py -q
@@ -272,7 +272,7 @@ were installed inside that `.venv`; no existing robot environment was changed.
 MuJoCo, Mink, NumPy, SciPy, DAQP, pytest, and Ruff versions match the applicable
 `uv.lock` entries. This was not a full `uv sync --frozen` installation and is
 not a claim that the Python 3.10/3.13 CI jobs ran locally. The CI workflow now
-includes K1 assets, the synthetic K1 tests, and the standalone geometry check.
+includes Booster K1 assets, the synthetic Booster K1 tests, and the standalone geometry check.
 
 
 # News & Updates
